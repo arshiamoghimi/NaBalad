@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity(), DroidListener {
     }
 
     private fun getNotGivenPermissions(): MutableList<String> {
-        var permissions = mutableListOf<String>()
+        val permissions = mutableListOf<String>()
         if (!isPermissionGiven(android.Manifest.permission.ACCESS_FINE_LOCATION)) {
             permissions.add(android.Manifest.permission.ACCESS_FINE_LOCATION)
         }
