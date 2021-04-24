@@ -1,19 +1,28 @@
 package ir.sambal.nabalad
 
 import android.content.pm.PackageManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.droidnet.DroidListener
+import com.droidnet.DroidNet
 import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.mapboxsdk.maps.MapView
 import com.mapbox.mapboxsdk.maps.Style
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), DroidListener {
     private var mapView: MapView? = null
+
+    private var mDroidNet: DroidNet? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        DroidNet.init(this)
+        mDroidNet = DroidNet.getInstance()
+        mDroidNet?.addInternetConnectivityListener(this)
 
         askRequiredPermissions()
 
@@ -42,6 +51,9 @@ class MainActivity : AppCompatActivity() {
         var permissions = mutableListOf<String>()
         if (!isPermissionGiven(android.Manifest.permission.ACCESS_FINE_LOCATION)) {
             permissions.add(android.Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        if (!isPermissionGiven(android.Manifest.permission.INTERNET)) {
+            permissions.add(android.Manifest.permission.INTERNET)
         }
         return permissions
     }
@@ -79,10 +91,18 @@ class MainActivity : AppCompatActivity() {
     override fun onLowMemory() {
         super.onLowMemory()
         mapView?.onLowMemory()
+        DroidNet.getInstance().removeAllInternetConnectivityChangeListeners()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         mapView?.onDestroy()
+        mDroidNet?.removeInternetConnectivityChangeListener(this)
+    }
+
+    override fun onInternetConnectivityChanged(isConnected: Boolean) {
+        if (!isConnected) {
+            TODO("Ask user for internet")
+        }
     }
 }
