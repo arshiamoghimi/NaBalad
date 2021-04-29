@@ -4,18 +4,18 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.fragment.app.Fragment
 import com.droidnet.DroidListener
 import com.droidnet.DroidNet
-import com.mapbox.mapboxsdk.Mapbox
-import com.mapbox.mapboxsdk.maps.MapView
-import com.mapbox.mapboxsdk.maps.Style
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 
 class MainActivity : AppCompatActivity(), DroidListener {
-    private var mapView: MapView? = null
 
     private var mDroidNet: DroidNet? = null
 
+    private var mapsFragment: MapsFragment? = null
+    private var bookmarkFragment: BookmarkFragment? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,19 +26,31 @@ class MainActivity : AppCompatActivity(), DroidListener {
 
         askRequiredPermissions()
 
-        Mapbox.getInstance(this, BuildConfig.MAPBOX_PUBLIC_KEY)
+        mapsFragment = MapsFragment.newInstance()
+        setCurrentFragment(mapsFragment!!)
+
+        bookmarkFragment = BookmarkFragment.newInstance()
 
         setContentView(R.layout.activity_main)
 
-        mapView = findViewById(R.id.mapView)
-        mapView?.onCreate(savedInstanceState)
-        mapView?.getMapAsync { mapboxMap ->
-            mapboxMap.setStyle(Style.MAPBOX_STREETS) {
-
+        val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+        bottomNavigation.selectedItemId = R.id.maps_menu_item
+        bottomNavigation.setOnNavigationItemSelectedListener {
+            when (it.itemId) {
+                R.id.maps_menu_item -> setCurrentFragment(mapsFragment!!)
+                R.id.bookmark_menu_item -> setCurrentFragment(bookmarkFragment!!)
             }
-
+            true
         }
+
     }
+
+    private fun setCurrentFragment(fragment: Fragment) =
+        supportFragmentManager.beginTransaction().apply {
+            replace(R.id.mainFragment, fragment)
+            commit()
+        }
+
 
     private fun askRequiredPermissions() {
         val permissions: Array<String> = getNotGivenPermissions().toTypedArray()
@@ -63,40 +75,8 @@ class MainActivity : AppCompatActivity(), DroidListener {
         return result == PackageManager.PERMISSION_GRANTED
     }
 
-    override fun onStart() {
-        super.onStart()
-        mapView?.onStart()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        mapView?.onResume()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        mapView?.onPause()
-    }
-
-    override fun onStop() {
-        super.onStop()
-        mapView?.onStop()
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        mapView?.onSaveInstanceState(outState)
-    }
-
-    override fun onLowMemory() {
-        super.onLowMemory()
-        mapView?.onLowMemory()
-        DroidNet.getInstance().removeAllInternetConnectivityChangeListeners()
-    }
-
     override fun onDestroy() {
         super.onDestroy()
-        mapView?.onDestroy()
         mDroidNet?.removeInternetConnectivityChangeListener(this)
     }
 
