@@ -1,7 +1,6 @@
 package ir.sambal.nabalad.dummy
 
-import java.util.ArrayList
-import java.util.HashMap
+import java.util.*
 
 /**
  * Helper class for providing sample content for user interfaces created by
@@ -36,7 +35,13 @@ object DummyContent {
     }
 
     private fun createDummyItem(position: Int): DummyItem {
-        return DummyItem(position.toString(), "Item " + position, makeDetails(position))
+        val random = Random()
+        return DummyItem(
+            position.toString(),
+            "Item " + position,
+            random.nextFloat() * (50 - 30) + 30,
+            random.nextFloat() * (60 - 40) + 40
+        )
     }
 
     private fun makeDetails(position: Int): String {
@@ -51,7 +56,12 @@ object DummyContent {
     /**
      * A dummy item representing a piece of content.
      */
-    data class DummyItem(val id: String, val content: String, val details: String) {
-        override fun toString(): String = content
+    data class DummyItem(val id: String, val title: String, val lat: Float, val lng: Float) {
+        override fun toString(): String = title
+        fun latLong(): String {
+            val latString = "%.4f".format(lat)
+            val lngString = "%.4f".format(lng)
+            return "$latString, $lngString"
+        }
     }
 }

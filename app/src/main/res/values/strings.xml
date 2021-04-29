@@ -5,4 +5,9 @@
     <string name="settings">Settings</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="delete">Delete</string>
+    <string name="bookmark_image">Bookmark Image</string>
+    <string name="my_bookmark_sample">My bookmark</string>
+    <string name="latlng_sample">37.43232, 54.5454</string>
+    <string name="search">Search</string>
 </resources>

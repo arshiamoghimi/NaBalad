@@ -33,15 +33,35 @@ class MainActivity : AppCompatActivity(), DroidListener {
 
         setContentView(R.layout.activity_main)
 
+        supportActionBar?.hide()
+
         val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
         bottomNavigation.selectedItemId = R.id.maps_menu_item
         bottomNavigation.setOnNavigationItemSelectedListener {
+            val title: String?
             when (it.itemId) {
-                R.id.maps_menu_item -> setCurrentFragment(mapsFragment!!)
-                R.id.bookmark_menu_item -> setCurrentFragment(bookmarkFragment!!)
+                R.id.maps_menu_item -> {
+                    setCurrentFragment(mapsFragment!!)
+                    title = null
+                }
+                R.id.bookmark_menu_item -> {
+                    setCurrentFragment(bookmarkFragment!!)
+                    title = resources.getString(R.string.bookmark)
+                }
+                else -> {
+                    setCurrentFragment(mapsFragment!!)
+                    title = null
+                }
+            }
+            if (title != null) {
+                supportActionBar?.show()
+                supportActionBar?.title = title
+            } else {
+                supportActionBar?.hide()
             }
             true
         }
+
 
     }
 
