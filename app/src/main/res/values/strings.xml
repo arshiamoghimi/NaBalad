@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">NaBalad</string>
+    <string name="bookmark">Bookmark</string>
+    <string name="map">Map</string>
+    <string name="settings">Settings</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
