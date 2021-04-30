@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import com.droidnet.DroidListener
 import com.droidnet.DroidNet
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.mapbox.android.core.permissions.PermissionsManager
 
 
 class MainActivity : AppCompatActivity(), DroidListener {
@@ -76,6 +77,17 @@ class MainActivity : AppCompatActivity(), DroidListener {
         val permissions: Array<String> = getNotGivenPermissions().toTypedArray()
         if (permissions.isNotEmpty()) {
             ActivityCompat.requestPermissions(this, permissions, 0)
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (PermissionsManager.areLocationPermissionsGranted(this)) {
+            mapsFragment?.locationPermissionGiven()
         }
     }
 

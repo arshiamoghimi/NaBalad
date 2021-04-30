@@ -1,19 +1,30 @@
 package ir.sambal.nabalad
 
+import android.annotation.SuppressLint
 import android.os.Bundle
-import android.util.Log
-import androidx.fragment.app.Fragment
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.fragment.app.Fragment
 import com.droidnet.DroidNet
+import com.mapbox.android.core.location.*
+import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.mapboxsdk.Mapbox
+import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions
+import com.mapbox.mapboxsdk.location.modes.RenderMode
 import com.mapbox.mapboxsdk.maps.MapView
+import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.Style
+import java.lang.ref.WeakReference
 
 
 class MapsFragment : Fragment() {
     private var mapView: MapView? = null
+    private var mapboxMap: MapboxMap? = null
+    private var locationEngine: LocationEngine? = null
+    private val locationCallback = LocationChangeListeningActivityLocationCallback(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,11 +47,92 @@ class MapsFragment : Fragment() {
         mapView = view.findViewById(R.id.mapView)
         mapView?.onCreate(savedInstanceState)
         mapView?.getMapAsync { mapboxMap ->
+            this.mapboxMap = mapboxMap
             mapboxMap.setStyle(Style.MAPBOX_STREETS) {
+                enableLocationComponent(it)
+            }
 
+        }
+    }
+
+    fun locationPermissionGiven() {
+        mapboxMap?.style?.let {
+            enableLocationComponent(it)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun enableLocationComponent(loadedMapStyle: Style) {
+        if (!PermissionsManager.areLocationPermissionsGranted(this.context)) {
+            return
+        }
+        val locationComponent = mapboxMap?.locationComponent
+        val locationComponentActivationOptions =
+            LocationComponentActivationOptions.builder(this.context!!, loadedMapStyle)
+                .useDefaultLocationEngine(false)
+                .build()
+        locationComponent?.apply {
+            activateLocationComponent(locationComponentActivationOptions)
+            isLocationComponentEnabled = true
+            renderMode = RenderMode.COMPASS
+        }
+        initLocationEngine()
+    }
+
+
+    @SuppressLint("MissingPermission")
+    private fun initLocationEngine() {
+        this.context?.let {
+            locationEngine = LocationEngineProvider.getBestLocationEngine(it)
+            val request = LocationEngineRequest.Builder(3_000L)
+                .setPriority(LocationEngineRequest.PRIORITY_BALANCED_POWER_ACCURACY)
+                .setMaxWaitTime(30_000L).build()
+            locationEngine?.apply {
+                requestLocationUpdates(request, locationCallback, Looper.getMainLooper())
+                getLastLocation(locationCallback)
             }
         }
     }
+
+    private class LocationChangeListeningActivityLocationCallback internal constructor(fragment: MapsFragment) :
+        LocationEngineCallback<LocationEngineResult?> {
+        private val fragmentWeakReference: WeakReference<MapsFragment> = WeakReference(fragment)
+
+        /**
+         * The LocationEngineCallback interface's method which fires when the device's location has changed.
+         *
+         * @param result the LocationEngineResult object which has the last known location within it.
+         */
+        override fun onSuccess(result: LocationEngineResult?) {
+            val fragment = fragmentWeakReference.get()
+            if (fragment != null) {
+                val location = result?.lastLocation ?: return
+
+                // Create a Toast which displays the new location's coordinates
+                Toast.makeText(
+                    fragment.context,
+                    String.format(
+                        "new location: %s, %s",
+                        result.lastLocation?.latitude.toString(),
+                        result.lastLocation?.longitude.toString()
+                    ),
+                    Toast.LENGTH_SHORT
+                ).show()
+
+//                    fragment?.mapboxMap?.locationComponent.forceLocationUpdate(result.lastLocation)
+            }
+        }
+
+        override fun onFailure(exception: Exception) {
+            val fragment = fragmentWeakReference.get()
+            Toast.makeText(
+                fragment?.context, exception.localizedMessage,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+    }
+
 
     override fun onStart() {
         super.onStart()
