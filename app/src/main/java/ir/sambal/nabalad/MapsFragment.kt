@@ -7,16 +7,20 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import com.droidnet.DroidNet
 import com.mapbox.android.core.location.*
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.mapboxsdk.Mapbox
+import com.mapbox.mapboxsdk.geometry.LatLng
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions
 import com.mapbox.mapboxsdk.location.modes.RenderMode
 import com.mapbox.mapboxsdk.maps.MapView
 import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.Style
+import com.mapbox.mapboxsdk.plugins.annotation.SymbolManager
+import com.mapbox.mapboxsdk.plugins.annotation.SymbolOptions
 import java.lang.ref.WeakReference
 
 
@@ -48,8 +52,31 @@ class MapsFragment : Fragment() {
         mapView?.onCreate(savedInstanceState)
         mapView?.getMapAsync { mapboxMap ->
             this.mapboxMap = mapboxMap
-            mapboxMap.setStyle(Style.MAPBOX_STREETS) {
-                enableLocationComponent(it)
+            mapboxMap.setStyle(Style.MAPBOX_STREETS) { style ->
+                enableLocationComponent(style)
+
+                val symbolManager = SymbolManager(mapView!!, mapboxMap, style)
+                symbolManager.iconAllowOverlap = true
+
+                context?.let { context ->
+                    ResourcesCompat.getDrawable(resources, R.drawable.marker_black, context.theme)
+                        ?.let {
+                            style.addImage(MARKER_IMAGE, it)
+                        }
+                }
+                val symbol = symbolManager.create(
+                    SymbolOptions()
+                        .withLatLng(LatLng(6.687337, 0.381457))
+                        .withIconImage(MARKER_IMAGE)
+                        .withIconAnchor("bottom")
+                        .withIconSize(2.0F)
+                        .withTextOffset(arrayOf(0F, 0.4F))
+                        .withTextField("x m/s")
+                        .withTextSize(18.0F)
+                )
+
+
+
             }
 
         }
@@ -109,15 +136,15 @@ class MapsFragment : Fragment() {
                 val location = result?.lastLocation ?: return
 
                 // Create a Toast which displays the new location's coordinates
-                Toast.makeText(
-                    fragment.context,
-                    String.format(
-                        "new location: %s, %s",
-                        result.lastLocation?.latitude.toString(),
-                        result.lastLocation?.longitude.toString()
-                    ),
-                    Toast.LENGTH_SHORT
-                ).show()
+//                Toast.makeText(
+//                    fragment.context,
+//                    String.format(
+//                        "new location: %s, %s",
+//                        result.lastLocation?.latitude.toString(),
+//                        result.lastLocation?.longitude.toString()
+//                    ),
+//                    Toast.LENGTH_SHORT
+//                ).show()
 
 //                    fragment?.mapboxMap?.locationComponent.forceLocationUpdate(result.lastLocation)
             }
@@ -172,6 +199,9 @@ class MapsFragment : Fragment() {
 
 
     companion object {
+
+        const val MARKER_IMAGE = "marker-image"
+
         /**
          * Use this factory method to create a new instance of
          * this fragment using the provided parameters.
