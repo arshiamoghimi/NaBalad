@@ -1,6 +1,7 @@
 package ir.sambal.nabalad
 
 import android.annotation.SuppressLint
+import android.location.Location
 import android.os.Bundle
 import android.os.Looper
 import android.view.LayoutInflater
@@ -10,17 +11,21 @@ import android.widget.Toast
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import com.droidnet.DroidNet
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.mapbox.android.core.location.*
 import com.mapbox.android.core.permissions.PermissionsManager
+import com.mapbox.android.gestures.MoveGestureDetector
 import com.mapbox.mapboxsdk.Mapbox
+import com.mapbox.mapboxsdk.camera.CameraPosition
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
 import com.mapbox.mapboxsdk.geometry.LatLng
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions
 import com.mapbox.mapboxsdk.location.modes.RenderMode
 import com.mapbox.mapboxsdk.maps.MapView
 import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.Style
-import com.mapbox.mapboxsdk.plugins.annotation.SymbolManager
 import com.mapbox.mapboxsdk.plugins.annotation.SymbolOptions
+import ir.sambal.nabalad.maps.Marker
 import java.lang.ref.WeakReference
 
 
@@ -29,6 +34,15 @@ class MapsFragment : Fragment() {
     private var mapboxMap: MapboxMap? = null
     private var locationEngine: LocationEngine? = null
     private val locationCallback = LocationChangeListeningActivityLocationCallback(this)
+    private var marker: Marker? = null
+    private var lastLocation: Location? = null
+        set(value) {
+            field = value
+            if (watchLocation && value != null) {
+                flyToLocation(value)
+            }
+        }
+    private var watchLocation = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,31 +68,43 @@ class MapsFragment : Fragment() {
             this.mapboxMap = mapboxMap
             mapboxMap.setStyle(Style.MAPBOX_STREETS) { style ->
                 enableLocationComponent(style)
-
-                val symbolManager = SymbolManager(mapView!!, mapboxMap, style)
-                symbolManager.iconAllowOverlap = true
-
-                context?.let { context ->
-                    ResourcesCompat.getDrawable(resources, R.drawable.marker_black, context.theme)
-                        ?.let {
-                            style.addImage(MARKER_IMAGE, it)
+                context?.let {
+                    ResourcesCompat.getDrawable(it.resources, R.drawable.marker_black, it.theme)
+                        ?.let { drawable ->
+                            style.addImage(MARKER_IMAGE, drawable)
                         }
                 }
-                val symbol = symbolManager.create(
+                marker = Marker(
+                    mapView!!, mapboxMap, style,
                     SymbolOptions()
-                        .withLatLng(LatLng(6.687337, 0.381457))
                         .withIconImage(MARKER_IMAGE)
                         .withIconAnchor("bottom")
                         .withIconSize(2.0F)
                         .withTextOffset(arrayOf(0F, 0.4F))
-                        .withTextField("x m/s")
                         .withTextSize(18.0F)
                 )
-
-
-
             }
 
+
+            mapboxMap.addOnMoveListener(object : MapboxMap.OnMoveListener {
+                override fun onMoveBegin(detector: MoveGestureDetector) {
+                    watchLocation = false
+                }
+
+                override fun onMove(detector: MoveGestureDetector) {
+
+                }
+
+                override fun onMoveEnd(detector: MoveGestureDetector) {
+
+                }
+            })
+        }
+
+        val gpsFabButton = view.findViewById<FloatingActionButton>(R.id.current_location_fab)
+        gpsFabButton.setOnClickListener {
+            lastLocation?.let { it1 -> flyToLocation(it1) }
+            watchLocation = true
         }
     }
 
@@ -133,20 +159,23 @@ class MapsFragment : Fragment() {
         override fun onSuccess(result: LocationEngineResult?) {
             val fragment = fragmentWeakReference.get()
             if (fragment != null) {
-                val location = result?.lastLocation ?: return
-
-                // Create a Toast which displays the new location's coordinates
-//                Toast.makeText(
-//                    fragment.context,
-//                    String.format(
-//                        "new location: %s, %s",
-//                        result.lastLocation?.latitude.toString(),
-//                        result.lastLocation?.longitude.toString()
-//                    ),
-//                    Toast.LENGTH_SHORT
-//                ).show()
-
-//                    fragment?.mapboxMap?.locationComponent.forceLocationUpdate(result.lastLocation)
+                if (result == null) {
+                    fragment.marker?.hide()
+                    fragment.lastLocation = null
+                    return
+                }
+                fragment.lastLocation = result.lastLocation
+                result.lastLocation?.let { location ->
+                    fragment.marker?.let {
+                        it.setLatLng(location.latitude, location.longitude)
+                        if (System.currentTimeMillis() - location.time > 20_000) {
+                            it.setText("")
+                        } else {
+                            it.setText("%.2f m/s".format(location.speed))
+                        }
+                        it.show()
+                    }
+                }
             }
         }
 
@@ -195,6 +224,21 @@ class MapsFragment : Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         mapView?.onDestroy()
+    }
+
+    private fun flyToLocation(location: Location) {
+        mapboxMap?.let {
+            val cameraPosition = it.cameraPosition
+
+            it.animateCamera(
+                CameraUpdateFactory.newCameraPosition(
+                    CameraPosition.Builder()
+                        .target(LatLng(location.latitude, location.longitude))
+                        .zoom(cameraPosition.zoom.coerceAtLeast(17.0))
+                        .build()
+                ), 500
+            )
+        }
     }
 
 
