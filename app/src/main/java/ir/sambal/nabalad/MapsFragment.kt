@@ -2,6 +2,7 @@ package ir.sambal.nabalad
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -70,6 +71,12 @@ class MapsFragment : Fragment(), OnMapReadyCallback {
 
             addUserLocations()
 
+            it.addImage(
+                symbolIconId, BitmapFactory.decodeResource(
+                    activity?.resources, R.drawable.blue_marker_view
+                )
+            );
+
             setUpSource(it)
 
             setUpLayer(it)
@@ -99,35 +106,30 @@ class MapsFragment : Fragment(), OnMapReadyCallback {
 
         if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_AUTOCOMPLETE) {
             val selectedCarmenFeature = PlaceAutocomplete.getPlace(data)
-
-            if (mapboxMap != null) {
-                val style = mapboxMap!!.style
-                if (style != null) {
-                    val source = style.getSourceAs<GeoJsonSource>(geojsonSourceLayerId)
-                    source?.setGeoJson(
-                        FeatureCollection.fromFeatures(
-                            arrayOf(
-                                Feature.fromJson(
-                                    selectedCarmenFeature.toJson()
-                                )
-                            )
+            val style = mapboxMap?.style
+            val source = style?.getSourceAs<GeoJsonSource>(geojsonSourceLayerId)
+            source?.setGeoJson(
+                FeatureCollection.fromFeatures(
+                    arrayOf(
+                        Feature.fromJson(
+                            selectedCarmenFeature.toJson()
                         )
                     )
-                    mapboxMap!!.animateCamera(
-                        CameraUpdateFactory.newCameraPosition(
-                            CameraPosition.Builder()
-                                .target(
-                                    LatLng(
-                                        (selectedCarmenFeature.geometry() as Point?)!!.latitude(),
-                                        (selectedCarmenFeature.geometry() as Point?)!!.longitude()
-                                    )
-                                )
-                                .zoom(14.0)
-                                .build()
-                        ), 4000
-                    )
-                }
-            }
+                )
+            )
+            mapboxMap?.animateCamera(
+                CameraUpdateFactory.newCameraPosition(
+                    CameraPosition.Builder()
+                        .target(
+                            LatLng(
+                                (selectedCarmenFeature.geometry() as Point?)!!.latitude(),
+                                (selectedCarmenFeature.geometry() as Point?)!!.longitude()
+                            )
+                        )
+                        .zoom(14.0)
+                        .build()
+                ), 4000
+            )
         }
     }
 
@@ -135,10 +137,10 @@ class MapsFragment : Fragment(), OnMapReadyCallback {
         style.addSource(GeoJsonSource(geojsonSourceLayerId))
     }
 
-    fun initSearchFab() {
+    private fun initSearchFab() {
         view?.findViewById<FloatingActionButton>(R.id.fab_location_search)?.setOnClickListener {
             val intent = PlaceAutocomplete.IntentBuilder()
-                .accessToken(Mapbox.getAccessToken()!!)
+                .accessToken(if (Mapbox.getAccessToken() != null) Mapbox.getAccessToken()!! else BuildConfig.MAPBOX_PUBLIC_KEY)
                 .placeOptions(
                     PlaceOptions.builder()
                         .backgroundColor(Color.parseColor("#EEEEEE"))
