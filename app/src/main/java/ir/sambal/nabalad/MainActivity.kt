@@ -1,9 +1,7 @@
 package ir.sambal.nabalad
 
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
@@ -11,7 +9,6 @@ import com.droidnet.DroidListener
 import com.droidnet.DroidNet
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.mapbox.android.core.permissions.PermissionsManager
-
 
 class MainActivity : AppCompatActivity(), DroidListener {
 
@@ -126,7 +123,7 @@ class MainActivity : AppCompatActivity(), DroidListener {
 
     override fun onInternetConnectivityChanged(isConnected: Boolean) {
         if (!isConnected) {
-            TODO("Ask user for internet")
+//            TODO("Ask user for internet")
         }
     }
 }
