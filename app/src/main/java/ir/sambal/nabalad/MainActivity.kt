@@ -5,14 +5,18 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import androidx.room.Room
 import com.droidnet.DroidListener
 import com.droidnet.DroidNet
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.mapbox.android.core.permissions.PermissionsManager
+import ir.sambal.nabalad.database.AppDatabase
 
 class MainActivity : AppCompatActivity(), DroidListener {
 
     private var mDroidNet: DroidNet? = null
+
+    private var db: AppDatabase? = null
 
     private var mapsFragment: MapsFragment? = null
     private var bookmarkFragment: BookmarkFragment? = null
@@ -31,12 +35,17 @@ class MainActivity : AppCompatActivity(), DroidListener {
         mDroidNet = DroidNet.getInstance()
         mDroidNet?.addInternetConnectivityListener(this)
 
+        db = Room.databaseBuilder(
+            this,
+            AppDatabase::class.java, "data"
+        ).fallbackToDestructiveMigration().build()
+
         askRequiredPermissions()
 
         mapsFragment = MapsFragment.newInstance()
         setCurrentFragment(mapsFragment!!)
 
-        bookmarkFragment = BookmarkFragment.newInstance()
+        bookmarkFragment = BookmarkFragment.newInstance(db!!)
 
         settingFragment = SettingFragment.newInstance()
 

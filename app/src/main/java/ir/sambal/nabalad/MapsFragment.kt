@@ -310,7 +310,9 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        mapboxMap?.locationComponent?.onDestroy()
         mapView?.onDestroy()
+        mapboxMap = null
     }
 
     private fun flyToLocation(location: Location, zoom: Double) {
