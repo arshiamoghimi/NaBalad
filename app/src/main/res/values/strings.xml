@@ -11,4 +11,7 @@
     <string name="latlng_sample">37.43232, 54.5454</string>
     <string name="search">Search</string>
     <string name="gps">GPS</string>
+    <string name="setting">Settings</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="delete_data">Delete Data</string>
 </resources>

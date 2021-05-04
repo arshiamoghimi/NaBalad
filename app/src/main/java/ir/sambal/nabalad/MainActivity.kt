@@ -1,7 +1,9 @@
 package ir.sambal.nabalad
 
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
@@ -17,6 +19,13 @@ class MainActivity : AppCompatActivity(), DroidListener {
 
     private var mapsFragment: MapsFragment? = null
     private var bookmarkFragment: BookmarkFragment? = null
+    private var settingFragment: SettingFragment? = null
+
+    override fun onResume() {
+        super.onResume()
+        val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+        bottomNavigation.selectedItemId = R.id.maps_menu_item
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,12 +41,13 @@ class MainActivity : AppCompatActivity(), DroidListener {
 
         bookmarkFragment = BookmarkFragment.newInstance()
 
+        settingFragment = SettingFragment.newInstance()
+
         setContentView(R.layout.activity_main)
 
         supportActionBar?.hide()
 
         val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
-        bottomNavigation.selectedItemId = R.id.maps_menu_item
         bottomNavigation.setOnNavigationItemSelectedListener {
             val title: String?
             when (it.itemId) {
@@ -47,7 +57,11 @@ class MainActivity : AppCompatActivity(), DroidListener {
                 }
                 R.id.bookmark_menu_item -> {
                     setCurrentFragment(bookmarkFragment!!)
-                    title = resources.getString(R.string.bookmark)
+                    title = getString(R.string.bookmark)
+                }
+                R.id.settings_menu_item -> {
+                    setCurrentFragment(settingFragment!!)
+                    title = getString(R.string.setting)
                 }
                 else -> {
                     setCurrentFragment(mapsFragment!!)
@@ -62,8 +76,6 @@ class MainActivity : AppCompatActivity(), DroidListener {
             }
             true
         }
-
-
     }
 
     private fun setCurrentFragment(fragment: Fragment) =
