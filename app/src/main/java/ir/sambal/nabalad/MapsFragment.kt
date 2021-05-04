@@ -11,6 +11,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
@@ -38,6 +39,7 @@ import java.lang.ref.WeakReference
 class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
     private var mapView: MapView? = null
     private var mapboxMap: MapboxMap? = null
+    private var searchBar: MaterialSearchBar? = null
     private var locationEngine: LocationEngine? = null
     private val locationCallback = LocationChangeListeningActivityLocationCallback(this)
     private var marker: Marker? = null
@@ -128,6 +130,7 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
 
         val searchBar = view.findViewById<MaterialSearchBar>(R.id.search_bar)
         searchBar.setOnSearchActionListener(this)
+        this.searchBar = searchBar
 
         //TODO: optional
         //lastSearches = loadSearchSuggestionFromDisk();
@@ -146,9 +149,20 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
         if (text != null) {
             val results = GeoCodingRequest.requestData(text)
             while (results.size == 0) {}
+            activity?.let { hideKeyboard(it) }
+            searchBar?.closeSearch()
 
             flyToLocation(results[0].getLocation(), SEARCH_ZOOM)
         }
+    }
+
+    fun hideKeyboard(activity: Activity) {
+        val imm = activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+        var view = activity.currentFocus
+        if (view == null) {
+            view = View(activity)
+        }
+        imm.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
     override fun onButtonClicked(buttonCode: Int) {
@@ -160,7 +174,10 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
 
     private fun displaySpeechRecognizer() {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
         }
         startActivityForResult(intent, SPEECH_REQUEST_CODE)
     }
