@@ -35,6 +35,7 @@ class MapsFragment : Fragment() {
     private var locationEngine: LocationEngine? = null
     private val locationCallback = LocationChangeListeningActivityLocationCallback(this)
     private var marker: Marker? = null
+    private var mapStyle = Style.LIGHT
     private var lastLocation: Location? = null
         set(value) {
             field = value
@@ -59,14 +60,24 @@ class MapsFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_maps, container, false)
     }
 
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        when (ThemeHelper.currentMode) {
+            ThemeHelper.DARK_MODE -> {
+                mapStyle = Style.DARK
+            }
+            ThemeHelper.LIGHT_MODE -> {
+                mapStyle = Style.LIGHT
+            }
+        }
 
         mapView = view.findViewById(R.id.mapView)
         mapView?.onCreate(savedInstanceState)
         mapView?.getMapAsync { mapboxMap ->
             this.mapboxMap = mapboxMap
-            mapboxMap.setStyle(Style.MAPBOX_STREETS) { style ->
+            mapboxMap.setStyle(mapStyle) { style ->
                 enableLocationComponent(style)
                 context?.let {
                     ResourcesCompat.getDrawable(it.resources, R.drawable.marker_black, it.theme)
