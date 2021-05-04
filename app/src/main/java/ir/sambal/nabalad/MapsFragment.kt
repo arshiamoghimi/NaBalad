@@ -321,7 +321,7 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
                 CameraUpdateFactory.newCameraPosition(
                     CameraPosition.Builder()
                         .target(LatLng(location.latitude, location.longitude))
-                        .zoom(cameraPosition.zoom.coerceIn(zoom, zoom))
+                        .zoom(zoom)
                         .build()
                 ), 500
             )

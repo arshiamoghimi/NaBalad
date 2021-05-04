@@ -123,7 +123,7 @@ class MainActivity : AppCompatActivity(), DroidListener {
 
     override fun onInternetConnectivityChanged(isConnected: Boolean) {
         if (!isConnected) {
-            TODO("Ask user for internet")
+//            TODO("Ask user for internet")
         }
     }
 }
