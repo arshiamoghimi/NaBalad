@@ -80,7 +80,7 @@ class MapsFragment : Fragment() {
             mapboxMap.setStyle(mapStyle) { style ->
                 enableLocationComponent(style)
                 context?.let {
-                    ResourcesCompat.getDrawable(it.resources, R.drawable.marker_black, it.theme)
+                    ResourcesCompat.getDrawable(it.resources, R.drawable.marker_red, it.theme)
                         ?.let { drawable ->
                             style.addImage(MARKER_IMAGE, drawable)
                         }
