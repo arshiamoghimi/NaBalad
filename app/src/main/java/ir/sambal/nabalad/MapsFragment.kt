@@ -31,6 +31,7 @@ import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.Style
 import com.mapbox.mapboxsdk.plugins.annotation.SymbolOptions
 import ir.sambal.nabalad.maps.Marker
+import ir.sambal.nabalad.network.GeoCodingRequest
 import java.lang.ref.WeakReference
 
 
@@ -45,11 +46,14 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
         set(value) {
             field = value
             if (watchLocation && value != null) {
-                flyToLocation(value)
+                flyToLocation(value, GPS_ZOOM)
             }
         }
     private var watchLocation = true
     private val SPEECH_REQUEST_CODE = 0
+    private val GPS_ZOOM = 17.0
+    private val SEARCH_ZOOM = 10.0
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -118,12 +122,12 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
 
         val gpsFabButton = view.findViewById<FloatingActionButton>(R.id.current_location_fab)
         gpsFabButton.setOnClickListener {
-            lastLocation?.let { it1 -> flyToLocation(it1) }
+            lastLocation?.let { it1 -> flyToLocation(it1, GPS_ZOOM) }
             watchLocation = true
         }
 
-        val searchBar = view.findViewById<MaterialSearchBar>(R.id.search_bar);
-        searchBar.setOnSearchActionListener(this);
+        val searchBar = view.findViewById<MaterialSearchBar>(R.id.search_bar)
+        searchBar.setOnSearchActionListener(this)
 
         //TODO: optional
         //lastSearches = loadSearchSuggestionFromDisk();
@@ -139,7 +143,12 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
     }
 
     private fun doSearch(text: String?) {
-        Log.v("TEST", text.toString())
+        if (text != null) {
+            val results = GeoCodingRequest.requestData(text)
+            while (results.size == 0) {}
+
+            flyToLocation(results[0].getLocation(), SEARCH_ZOOM)
+        }
     }
 
     override fun onButtonClicked(buttonCode: Int) {
@@ -287,7 +296,7 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
         mapView?.onDestroy()
     }
 
-    private fun flyToLocation(location: Location) {
+    private fun flyToLocation(location: Location, zoom: Double) {
         mapboxMap?.let {
             val cameraPosition = it.cameraPosition
 
@@ -295,7 +304,7 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
                 CameraUpdateFactory.newCameraPosition(
                     CameraPosition.Builder()
                         .target(LatLng(location.latitude, location.longitude))
-                        .zoom(cameraPosition.zoom.coerceAtLeast(17.0))
+                        .zoom(cameraPosition.zoom.coerceIn(zoom, zoom))
                         .build()
                 ), 500
             )
