@@ -69,6 +69,12 @@ class BookmarkFragment(private val db: AppDatabase) : Fragment(),
         viewModel?.deleteBookmark(bookmark)
     }
 
+    private fun doSearch(filter: String?) {
+        if (!filter.equals(this.filter)) {
+            this.filter = filter
+            viewModel?.loadTopBookmarks(filter = filter)
+        }
+    }
 
     override fun onButtonClicked(buttonCode: Int) {
         when (buttonCode) {
@@ -80,8 +86,7 @@ class BookmarkFragment(private val db: AppDatabase) : Fragment(),
             }
             MaterialSearchBar.BUTTON_BACK -> {
                 searchBar.closeSearch()
-                filter = null
-                viewModel?.loadTopBookmarks()
+                doSearch(null)
             }
         }
     }
@@ -105,8 +110,7 @@ class BookmarkFragment(private val db: AppDatabase) : Fragment(),
                     results!![0]
                 }
             if (spokenText != null) {
-                filter = spokenText
-                viewModel?.loadTopBookmarks(filter = filter)
+                doSearch(spokenText)
             }
         }
         super.onActivityResult(requestCode, resultCode, data)
@@ -120,8 +124,7 @@ class BookmarkFragment(private val db: AppDatabase) : Fragment(),
     }
 
     override fun onSearchConfirmed(text: CharSequence?) {
-        filter = text.toString()
-        viewModel?.loadTopBookmarks(filter = filter)
+        doSearch(text.toString())
     }
 
     companion object {
