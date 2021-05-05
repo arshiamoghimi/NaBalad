@@ -62,4 +62,11 @@ class Marker(mapView: MapView, map: MapboxMap, style: Style, private val options
         }
     }
 
+    fun getLatitude(): Double {
+        return this.latitude;
+    }
+
+    fun getLongitude(): Double {
+        return this.longitude;
+    }
 }
