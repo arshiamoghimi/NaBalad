@@ -82,9 +82,6 @@ class BookmarkFragment(private val db: AppDatabase) : Fragment(),
                 displaySpeechRecognizer()
             }
             MaterialSearchBar.BUTTON_SPEECH -> {
-
-            }
-            MaterialSearchBar.BUTTON_BACK -> {
                 searchBar.closeSearch()
                 doSearch(null)
             }
