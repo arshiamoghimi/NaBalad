@@ -22,6 +22,7 @@ import com.droidnet.DroidNet
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.textfield.TextInputEditText
 import com.mancj.materialsearchbar.MaterialSearchBar
 import com.mapbox.android.core.location.*
 import com.mapbox.android.core.permissions.PermissionsManager
@@ -62,6 +63,7 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
     private lateinit var bookmarkCancelButton: Button
     private lateinit var bookmarkSaveButton: Button
     private lateinit var bookmarkTextView: TextView
+    private lateinit var bookmarkName: TextInputEditText
 
     private val SPEECH_REQUEST_CODE = 0
     private val GPS_ZOOM = 17.0
@@ -134,7 +136,7 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
 
             mapboxMap.addOnMapLongClickListener { point ->
                 marker?.setLatLng(point.latitude, point.longitude)
-                bookmarkTextView.text = "(%.2f, %.2f)".format(point.latitude, point.longitude)
+                setBookmarkLocationTextView()
                 bookmarkBottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                 true
             }
@@ -159,6 +161,7 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
         bookmarkCancelButton = view.findViewById(R.id.bookmarkCancelButton)
         bookmarkSaveButton = view.findViewById(R.id.bookmarkSaveButton)
         bookmarkTextView = view.findViewById(R.id.bookmarkLocation)
+        bookmarkName = view.findViewById(R.id.bookmarkName)
         bookmarkBottomSheetBehavior = BottomSheetBehavior.from(bookmarkBottomSheet)
 
         bookmarkBottomSheetBehavior.addBottomSheetCallback(object :
@@ -174,7 +177,10 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
                         watchLocation = true
                         activity?.let { hideKeyboard(it) }
                     }
-                    BottomSheetBehavior.STATE_EXPANDED -> watchLocation = false
+                    BottomSheetBehavior.STATE_EXPANDED -> {
+                        watchLocation = false
+                        setBookmarkLocationTextView()
+                    }
                 }
             }
         })
@@ -208,7 +214,16 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
     }
 
     fun saveBookmark() {
+        val lat: Double? = marker?.getLatitude()
+        val lon: Double? = marker?.getLongitude()
+        val name: String = bookmarkName.text.toString()
         //TODO
+    }
+
+    fun setBookmarkLocationTextView() {
+        val lat: Double? = marker?.getLatitude()
+        val lon: Double? = marker?.getLongitude()
+        bookmarkTextView.text = "(%.6f, %.6f)".format(lat, lon)
     }
 
     fun hideKeyboard(activity: Activity) {
