@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/bottom_sheet"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -10,15 +9,17 @@
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        >
+        android:layout_marginBottom="-20dp"
+        app:cardCornerRadius="20dp"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.MaterialComponents.MediumComponent">
+
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:app="http://schemas.android.com/apk/res-auto"
-            android:id="@+id/bottom_sheet"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:padding="15dp"
-            >
+            android:padding="15dp">
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -36,17 +37,17 @@
                     android:id="@+id/bookmarkLocation"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text=""
                     android:paddingLeft="10dp"
+                    android:text=""
                     android:textSize="15sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:paddingTop="15dp"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                android:paddingTop="15dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/bookmarkName"
@@ -63,21 +64,19 @@
 
                 <Button
                     android:id="@+id/bookmarkCancelButton"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="cancel"
-                    android:layout_width="0dp"
-                    android:layout_marginRight="10dp"
                     style="@style/Widget.MaterialComponents.Button.TextButton"
-                />
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="10dp"
+                    android:layout_weight="1"
+                    android:text="cancel" />
 
                 <Button
                     android:id="@+id/bookmarkSaveButton"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="save"
-                    android:layout_width="0dp"
-                />
+                    android:text="save" />
             </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
