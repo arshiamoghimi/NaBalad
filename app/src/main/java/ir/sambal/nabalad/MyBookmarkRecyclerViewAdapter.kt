@@ -1,19 +1,20 @@
 package ir.sambal.nabalad
 
 import android.util.Log
-import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.recyclerview.widget.RecyclerView
+import ir.sambal.nabalad.database.entities.Bookmark
 
-import ir.sambal.nabalad.dummy.DummyContent.DummyItem
 
-class MyBookmarkRecyclerViewAdapter(
-    private val values: List<DummyItem>
-) : RecyclerView.Adapter<MyBookmarkRecyclerViewAdapter.ViewHolder>() {
+class MyBookmarkRecyclerViewAdapter(private val onDeleteHandler: (Bookmark) -> Unit) :
+    RecyclerView.Adapter<MyBookmarkRecyclerViewAdapter.ViewHolder>() {
+
+    var values: ArrayList<Bookmark> = ArrayList()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -23,8 +24,8 @@ class MyBookmarkRecyclerViewAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = values[position]
-        holder.titleView.text = item.title
-        holder.locationView.text = item.latLong()
+        holder.titleView.text = item.name
+        holder.locationView.text = item.latLng()
         holder.cardView.setOnClickListener { v ->
             Log.i(
                 "BOOKMARK_LIST",
@@ -36,10 +37,28 @@ class MyBookmarkRecyclerViewAdapter(
                 "BOOKMARK_LIST",
                 "remove " + item.id.toString()
             )
+            onDeleteHandler(item)
         }
     }
 
     override fun getItemCount(): Int = values.size
+
+    fun update(from: Int, bookmarks: List<Bookmark>) {
+        for ((index, bookmark) in bookmarks.withIndex()) {
+            val i = from + index
+            if (i < values.size) {
+                values[i] = bookmark
+            } else {
+                values.add(bookmark)
+            }
+            notifyItemChanged(i)
+        }
+    }
+
+    fun remove(index: Int) {
+        values.removeAt(index)
+        notifyItemRemoved(index)
+    }
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val titleView: TextView = view.findViewById(R.id.title)
