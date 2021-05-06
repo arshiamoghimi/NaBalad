@@ -1,6 +1,9 @@
 package ir.sambal.nabalad
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
+import android.speech.RecognizerIntent
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -9,18 +12,19 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.mancj.materialsearchbar.MaterialSearchBar
 import ir.sambal.nabalad.database.AppDatabase
 import ir.sambal.nabalad.database.entities.Bookmark
 import ir.sambal.nabalad.database.viewmodel.BookmarkViewModel
 import ir.sambal.nabalad.helpers.EndlessRecyclerViewScrollListener
 
-/**
- * A fragment representing a list of Items.
- */
-class BookmarkFragment(private val db: AppDatabase) : Fragment() {
+
+class BookmarkFragment(private val db: AppDatabase) : Fragment(),
+    MaterialSearchBar.OnSearchActionListener {
 
     private var viewModel: BookmarkViewModel? = null
     private var filter: String? = null
+    private lateinit var searchBar: MaterialSearchBar
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -50,10 +54,13 @@ class BookmarkFragment(private val db: AppDatabase) : Fragment() {
         viewModel?.loadTopBookmarks()
 
         view.findViewById<FloatingActionButton>(R.id.add_random_bookmark).setOnClickListener {
-//            filter = "1"
-//            viewModel?.loadTopBookmarks(filter = filter)
             viewModel?.addRandom()
         }
+
+        searchBar = view.findViewById<MaterialSearchBar>(R.id.search_bar)
+        searchBar.setOnSearchActionListener(this)
+        searchBar.setSpeechMode(true)
+
         return view
     }
 
@@ -62,10 +69,65 @@ class BookmarkFragment(private val db: AppDatabase) : Fragment() {
         viewModel?.deleteBookmark(bookmark)
     }
 
+    private fun doSearch(filter: String?) {
+        if (!filter.equals(this.filter)) {
+            this.filter = filter
+            viewModel?.loadTopBookmarks(filter = filter)
+        }
+    }
+
+    override fun onButtonClicked(buttonCode: Int) {
+        when (buttonCode) {
+            MaterialSearchBar.BUTTON_NAVIGATION -> {
+                displaySpeechRecognizer()
+            }
+            MaterialSearchBar.BUTTON_SPEECH -> {
+                searchBar.closeSearch()
+                doSearch(null)
+            }
+        }
+    }
+
+
+    private fun displaySpeechRecognizer() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+        }
+        startActivityForResult(intent, SPEECH_REQUEST_CODE)
+    }
+
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == SPEECH_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            val spokenText: String? =
+                data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS).let { results ->
+                    results!![0]
+                }
+            if (spokenText != null) {
+                doSearch(spokenText)
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onSearchStateChanged(enabled: Boolean) {
+        if (!enabled && filter != null) {
+            filter = null
+            viewModel?.loadTopBookmarks(filter = filter)
+        }
+    }
+
+    override fun onSearchConfirmed(text: CharSequence?) {
+        doSearch(text.toString())
+    }
 
     companion object {
 
         const val TAG = "BOOKMARK_LIST"
+        const val SPEECH_REQUEST_CODE = 2
 
         @JvmStatic
         fun newInstance(db: AppDatabase) =
