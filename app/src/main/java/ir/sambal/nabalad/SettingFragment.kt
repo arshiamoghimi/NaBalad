@@ -1,11 +1,10 @@
 package ir.sambal.nabalad
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import androidx.fragment.app.Fragment
 import com.google.android.material.switchmaterial.SwitchMaterial
 
 
@@ -34,13 +33,5 @@ class SettingFragment : Fragment() {
             }
         }
         return view
-    }
-
-    companion object {
-
-        @JvmStatic
-        fun newInstance() =
-            SettingFragment().apply {
-            }
     }
 }

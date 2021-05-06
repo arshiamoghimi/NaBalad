@@ -11,7 +11,10 @@ import androidx.recyclerview.widget.RecyclerView
 import ir.sambal.nabalad.database.entities.Bookmark
 
 
-class MyBookmarkRecyclerViewAdapter(private val onDeleteHandler: (Bookmark) -> Unit) :
+class MyBookmarkRecyclerViewAdapter(
+    private val onDeleteHandler: (Bookmark) -> Unit,
+    private val onClickHandler: (Bookmark) -> Unit
+) :
     RecyclerView.Adapter<MyBookmarkRecyclerViewAdapter.ViewHolder>() {
 
     var values: ArrayList<Bookmark> = ArrayList()
@@ -31,6 +34,7 @@ class MyBookmarkRecyclerViewAdapter(private val onDeleteHandler: (Bookmark) -> U
                 "BOOKMARK_LIST",
                 "click " + item.id.toString()
             )
+            onClickHandler(item)
         }
         holder.removeButtonView.setOnClickListener { v ->
             Log.i(

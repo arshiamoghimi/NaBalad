@@ -51,6 +51,7 @@ class MapsFragment(
     private var changePageCallback: (Int) -> Unit
 ) : Fragment(),
     MaterialSearchBar.OnSearchActionListener {
+    private var toShowBookmark: Bookmark? = null
     private var mapView: MapView? = null
     private var mapboxMap: MapboxMap? = null
     private var searchBar: MaterialSearchBar? = null
@@ -75,10 +76,6 @@ class MapsFragment(
     private lateinit var bookmarkSaveButton: Button
     private lateinit var bookmarkTextView: TextView
     private lateinit var bookmarkName: TextInputEditText
-
-    private val SPEECH_REQUEST_CODE = 0
-    private val GPS_ZOOM = 17.0
-    private val SEARCH_ZOOM = 10.0
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -150,8 +147,12 @@ class MapsFragment(
                             .withIconImage(BOOKMARK_MARKER_IMAGE)
                             .withIconAnchor("bottom")
                             .withIconSize(2.0F)
+                            .withTextOffset(arrayOf(0F, 0.4F))
+                            .withTextSize(18.0F)
                     )
                 }
+
+                showBookmark()
             }
 
 
@@ -460,11 +461,32 @@ class MapsFragment(
         }
     }
 
+    fun showBookmark(bookmark: Bookmark) {
+        toShowBookmark = bookmark
+    }
+
+    private fun showBookmark() {
+        toShowBookmark?.let { bookmark ->
+            watchLocation = false
+            bookmarkMarker?.let {
+                it.setLatLng(bookmark.latitude, bookmark.longitude)
+                it.setText(bookmark.name)
+                it.show()
+            }
+            flyToLocation(LatLng(bookmark.latitude, bookmark.longitude), BOOKMARK_ZOOM)
+            toShowBookmark = null
+        }
+    }
+
 
     companion object {
 
         const val GPS_MARKER_IMAGE = "gps-marker-image"
         const val ADD_BOOKMARK_MARKER_IMAGE = "add-marker-image"
         const val BOOKMARK_MARKER_IMAGE = "blue-marker-image"
+        const private val SPEECH_REQUEST_CODE = 0
+        const private val GPS_ZOOM = 17.0
+        const private val BOOKMARK_ZOOM = 15.0
+        const private val SEARCH_ZOOM = 10.0
     }
 }

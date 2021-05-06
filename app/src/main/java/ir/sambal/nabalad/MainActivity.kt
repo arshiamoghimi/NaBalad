@@ -11,6 +11,7 @@ import com.droidnet.DroidNet
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.mapbox.android.core.permissions.PermissionsManager
 import ir.sambal.nabalad.database.AppDatabase
+import ir.sambal.nabalad.database.entities.Bookmark
 
 class MainActivity : AppCompatActivity(), DroidListener {
 
@@ -48,9 +49,13 @@ class MainActivity : AppCompatActivity(), DroidListener {
         }
         setCurrentFragment(mapsFragment!!)
 
-        bookmarkFragment = BookmarkFragment.newInstance(db)
+        bookmarkFragment = BookmarkFragment(db) { bookmark: Bookmark ->
+            mapsFragment?.showBookmark(bookmark)
+            val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+            bottomNavigation.selectedItemId = R.id.maps_menu_item
+        }
 
-        settingFragment = SettingFragment.newInstance()
+        settingFragment = SettingFragment()
 
         setContentView(R.layout.activity_main)
 

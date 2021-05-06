@@ -19,7 +19,10 @@ import ir.sambal.nabalad.database.viewmodel.BookmarkViewModel
 import ir.sambal.nabalad.helpers.EndlessRecyclerViewScrollListener
 
 
-class BookmarkFragment(private val db: AppDatabase) : Fragment(),
+class BookmarkFragment(
+    private val db: AppDatabase,
+    private val showBookmarkHandler: (Bookmark) -> Unit
+) : Fragment(),
     MaterialSearchBar.OnSearchActionListener {
 
     private var viewModel: BookmarkViewModel? = null
@@ -39,7 +42,7 @@ class BookmarkFragment(private val db: AppDatabase) : Fragment(),
 
         val layoutManager = LinearLayoutManager(context)
         listView.layoutManager = layoutManager
-        listView.adapter = MyBookmarkRecyclerViewAdapter(this::onBookmarkDelete)
+        listView.adapter = MyBookmarkRecyclerViewAdapter(this::onBookmarkDelete, showBookmarkHandler)
 
         val scrollListener = object : EndlessRecyclerViewScrollListener(layoutManager) {
             override fun onLoadMore(page: Int, totalItemsCount: Int, view: RecyclerView?) {
@@ -123,10 +126,5 @@ class BookmarkFragment(private val db: AppDatabase) : Fragment(),
 
         const val TAG = "BOOKMARK_LIST"
         const val SPEECH_REQUEST_CODE = 2
-
-        @JvmStatic
-        fun newInstance(db: AppDatabase) =
-            BookmarkFragment(db).apply {
-            }
     }
 }
