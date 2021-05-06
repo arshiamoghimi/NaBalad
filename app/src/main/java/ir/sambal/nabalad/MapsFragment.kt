@@ -12,11 +12,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import com.droidnet.DroidNet
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.textfield.TextInputEditText
 import com.mancj.materialsearchbar.MaterialSearchBar
 import com.mapbox.android.core.location.*
 import com.mapbox.android.core.permissions.PermissionsManager
@@ -52,6 +57,13 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
             }
         }
     private var watchLocation = true
+    private lateinit var bookmarkBottomSheet: LinearLayout
+    private lateinit var bookmarkBottomSheetBehavior: BottomSheetBehavior<LinearLayout>
+    private lateinit var bookmarkCancelButton: Button
+    private lateinit var bookmarkSaveButton: Button
+    private lateinit var bookmarkTextView: TextView
+    private lateinit var bookmarkName: TextInputEditText
+
     private val SPEECH_REQUEST_CODE = 0
     private val GPS_ZOOM = 17.0
     private val SEARCH_ZOOM = 10.0
@@ -120,6 +132,13 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
 
                 }
             })
+
+            mapboxMap.addOnMapLongClickListener { point ->
+                marker?.setLatLng(point.latitude, point.longitude)
+                setBookmarkLocationTextView()
+                bookmarkBottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+                true
+            }
         }
 
         val gpsFabButton = view.findViewById<FloatingActionButton>(R.id.current_location_fab)
@@ -136,6 +155,43 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
         //lastSearches = loadSearchSuggestionFromDisk();
         // searchBar.setLastSuggestions(lastSearches);
         //Inflate menu and setup OnMenuItemClickListener
+
+        bookmarkBottomSheet = view.findViewById(R.id.bookmarkBottomSheet)
+        bookmarkCancelButton = view.findViewById(R.id.bookmarkCancelButton)
+        bookmarkSaveButton = view.findViewById(R.id.bookmarkSaveButton)
+        bookmarkTextView = view.findViewById(R.id.bookmarkLocation)
+        bookmarkName = view.findViewById(R.id.bookmarkName)
+        bookmarkBottomSheetBehavior = BottomSheetBehavior.from(bookmarkBottomSheet)
+
+        bookmarkBottomSheetBehavior.addBottomSheetCallback(object :
+            BottomSheetBehavior.BottomSheetCallback() {
+
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                // handle onSlide
+            }
+
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                when (newState) {
+                    BottomSheetBehavior.STATE_COLLAPSED -> {
+                        watchLocation = true
+                        activity?.let { hideKeyboard(it) }
+                    }
+                    BottomSheetBehavior.STATE_EXPANDED -> {
+                        watchLocation = false
+                        setBookmarkLocationTextView()
+                    }
+                }
+            }
+        })
+
+        bookmarkCancelButton.setOnClickListener {
+            if (bookmarkBottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED)
+                bookmarkBottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+        }
+
+        bookmarkSaveButton.setOnClickListener {
+            saveBookmark()
+        }
     }
 
     override fun onSearchStateChanged(enabled: Boolean) {
@@ -154,6 +210,19 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
 
             flyToLocation(results[0].getLocation(), SEARCH_ZOOM)
         }
+    }
+
+    fun saveBookmark() {
+        val lat: Double? = marker?.getLatitude()
+        val lon: Double? = marker?.getLongitude()
+        val name: String = bookmarkName.text.toString()
+        //TODO
+    }
+
+    fun setBookmarkLocationTextView() {
+        val lat: Double? = marker?.getLatitude()
+        val lon: Double? = marker?.getLongitude()
+        bookmarkTextView.text = "(%.6f, %.6f)".format(lat, lon)
     }
 
     fun hideKeyboard(activity: Activity) {
@@ -254,7 +323,9 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
                 fragment.lastLocation = result.lastLocation
                 result.lastLocation?.let { location ->
                     fragment.marker?.let {
-                        it.setLatLng(location.latitude, location.longitude)
+                        if (fragment.watchLocation) {
+                            it.setLatLng(location.latitude, location.longitude)
+                        }
                         if (System.currentTimeMillis() - location.time > 20_000) {
                             it.setText("")
                         } else {

@@ -14,5 +14,9 @@
     <string name="setting">Settings</string>
     <string name="dark_mode">Dark Mode</string>
     <string name="delete_data">Delete Data</string>
+    <string name="save_location">Save Location</string>
+    <string name="name">name</string>
+    <string name="cancel">cancel</string>
+    <string name="save">save</string>
     <string name="filter_bookmarks">Filter bookmarks</string>
 </resources>
