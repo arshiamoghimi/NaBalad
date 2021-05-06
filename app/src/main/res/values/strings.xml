@@ -18,4 +18,5 @@
     <string name="name">name</string>
     <string name="cancel">cancel</string>
     <string name="save">save</string>
+    <string name="filter_bookmarks">Filter bookmarks</string>
 </resources>
