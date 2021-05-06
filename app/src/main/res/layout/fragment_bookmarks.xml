@@ -16,10 +16,11 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:mt_hint="@string/filter_bookmarks"
-        app:mt_placeholder="@string/filter_bookmarks"
         app:mt_maxSuggestionsCount="0"
+        app:mt_placeholder="@string/filter_bookmarks"
         app:mt_roundedSearchBarEnabled="false"
         app:mt_speechMode="true" />
+
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/list"
@@ -33,14 +34,14 @@
         app:layout_constraintTop_toBottomOf="@+id/search_bar"
         tools:listitem="@layout/fragment_bookmarks_item" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/add_random_bookmark"
+    <TextView
+        android:id="@+id/bookmark_not_found_error_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="end|bottom"
-        android:contentDescription="@string/gps"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@drawable/current_location_fab" />
+        android:text="@string/bookmarks_not_found"
+        android:visibility="invisible"
+        android:layout_margin="@dimen/text_margin"
+        app:layout_constraintStart_toStartOf="@+id/list"
+        app:layout_constraintTop_toBottomOf="@+id/search_bar" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
