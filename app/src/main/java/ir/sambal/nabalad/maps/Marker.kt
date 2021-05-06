@@ -23,8 +23,10 @@ class Marker(mapView: MapView, map: MapboxMap, style: Style, private val options
 
     fun hide() {
         synchronized(this) {
-            symbolManager.delete(symbol)
-            symbol = null
+            if (symbol != null) {
+                symbolManager.delete(symbol)
+                symbol = null
+            }
         }
     }
 

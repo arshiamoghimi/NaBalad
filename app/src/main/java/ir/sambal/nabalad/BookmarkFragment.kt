@@ -12,7 +12,6 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.mancj.materialsearchbar.MaterialSearchBar
 import ir.sambal.nabalad.database.AppDatabase
 import ir.sambal.nabalad.database.entities.Bookmark
@@ -52,10 +51,6 @@ class BookmarkFragment(private val db: AppDatabase) : Fragment(),
         }
         listView.addOnScrollListener(scrollListener)
         viewModel?.loadTopBookmarks()
-
-        view.findViewById<FloatingActionButton>(R.id.add_random_bookmark).setOnClickListener {
-            viewModel?.addRandom()
-        }
 
         searchBar = view.findViewById<MaterialSearchBar>(R.id.search_bar)
         searchBar.setOnSearchActionListener(this)

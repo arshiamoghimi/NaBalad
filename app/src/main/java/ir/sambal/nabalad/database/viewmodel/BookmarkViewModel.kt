@@ -99,17 +99,6 @@ class BookmarkViewModel(
         }
     }
 
-    fun addRandom() {
-        val random = Random(System.currentTimeMillis())
-        val latitude = random.nextDouble(20.0, 50.0)
-        val longitude = random.nextDouble(40.0, 70.0)
-        val text = "Random Bookmark ${random.nextInt().toString()}"
-        val bookmark = Bookmark(name = text, latitude = latitude, longitude = longitude)
-        viewModelScope.launch(Dispatchers.IO) {
-            db.bookmarkDao().add(bookmark)
-        }
-    }
-
 
     companion object {
         const val PER_PAGE = 10
