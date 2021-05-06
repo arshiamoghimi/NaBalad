@@ -5,9 +5,11 @@ import android.app.Activity
 import android.content.Intent
 import android.location.Location
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.speech.RecognizerIntent
-import android.util.Log
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,6 +26,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
 import com.mancj.materialsearchbar.MaterialSearchBar
+import com.mancj.materialsearchbar.adapter.SuggestionsAdapter
 import com.mapbox.android.core.location.*
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.android.gestures.MoveGestureDetector
@@ -55,6 +58,7 @@ class MapsFragment(
     private var mapView: MapView? = null
     private var mapboxMap: MapboxMap? = null
     private var searchBar: MaterialSearchBar? = null
+    private lateinit var searchResults: ArrayList<Target>
     private var locationEngine: LocationEngine? = null
     private val locationCallback = LocationChangeListeningActivityLocationCallback(this)
     private var gpsMarker: Marker? = null
@@ -195,7 +199,11 @@ class MapsFragment(
         val searchBar = view.findViewById<MaterialSearchBar>(R.id.search_bar)
         searchBar.setOnSearchActionListener(this)
         this.searchBar = searchBar
-
+//
+        var textWatcher = SearchBarTextWatcher(this)
+//
+        searchBar.addTextChangeListener(textWatcher)
+        searchBar.setSuggestionsClickListener(onSuggestionClickListener(this))
         //TODO: optional
         //lastSearches = loadSearchSuggestionFromDisk();
         // searchBar.setLastSuggestions(lastSearches);
@@ -256,19 +264,44 @@ class MapsFragment(
     }
 
     override fun onSearchConfirmed(text: CharSequence?) {
-        doSearch(text.toString())
+        fun onComplete() {
+            gotoSearchedLocation(0)
+        }
+
+        getSearchResults(text.toString(), ::onComplete)
     }
 
-    private fun doSearch(text: String?) {
-        if (text != null) {
-            val results = GeoCodingRequest.requestData(text)
-            while (results.size == 0) {
-            }
-            activity?.let { hideKeyboard(it) }
-            searchBar?.closeSearch()
+    fun getSearchResults(text: String?, onCompleted: (() -> Unit)?) {
+        val handler: Handler = Handler(Looper.getMainLooper());
 
-            flyToLocation(results[0].getLatLng(), SEARCH_ZOOM)
+        fun callback(results: ArrayList<Target>) {
+            handler.post(java.lang.Runnable {
+                val resultsNames = results.map { target: Target -> target.name }
+                searchBar?.lastSuggestions = resultsNames
+                if (!searchBar?.isSuggestionsVisible!!) {
+                    searchBar?.showSuggestionsList()
+                }
+
+                searchResults = results
+                onCompleted?.let { it() }
+            })
+
         }
+        if (text != null) {
+            GeoCodingRequest.requestData(text, ::callback)
+        }
+    }
+
+    fun gotoSearchedLocation(position: Int) {
+        flyToLocation(searchResults[position].getLocation(), SEARCH_ZOOM)
+        activity?.let { hideKeyboard(it) }
+        searchBar?.closeSearch()
+        if (searchBar?.isSuggestionsVisible!!) {
+            searchBar?.hideSuggestionsList()
+        }
+        searchBar?.lastSuggestions = listOf<String>()
+        searchResults = arrayListOf<Target>()
+        watchLocation = false
     }
 
     private fun saveBookmark() {
@@ -308,7 +341,7 @@ class MapsFragment(
     }
 
     override fun onButtonClicked(buttonCode: Int) {
-        Log.v("TEST", buttonCode.toString())
+//        Log.v("TEST", buttonCode.toString())
         when (buttonCode) {
             MaterialSearchBar.BUTTON_SPEECH -> displaySpeechRecognizer()
         }
@@ -331,7 +364,7 @@ class MapsFragment(
                     results!![0]
                 }
             if (spokenText != null) {
-                doSearch(spokenText)
+                getSearchResults(spokenText, null)
             }
         }
         super.onActivityResult(requestCode, resultCode, data)
@@ -418,6 +451,33 @@ class MapsFragment(
 
     }
 
+
+    class SearchBarTextWatcher(private var mapsFragment: MapsFragment) : TextWatcher {
+        override fun afterTextChanged(s: Editable?) {
+            return
+        }
+
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+            return
+        }
+
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            mapsFragment.getSearchResults(s.toString(), null)
+            return
+        }
+
+    }
+
+    class onSuggestionClickListener(private var mapsFragment: MapsFragment): SuggestionsAdapter.OnItemViewClickListener {
+        override fun OnItemDeleteListener(position: Int, v: View?) {
+            return
+        }
+
+        override fun OnItemClickListener(position: Int, v: View?) {
+            mapsFragment.gotoSearchedLocation(position)
+        }
+
+    }
 
     override fun onStart() {
         super.onStart()

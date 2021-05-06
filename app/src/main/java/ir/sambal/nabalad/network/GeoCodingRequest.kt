@@ -1,6 +1,5 @@
 package ir.sambal.nabalad.network
 
-import android.util.Log
 import ir.sambal.nabalad.BuildConfig
 import ir.sambal.nabalad.Target
 import okhttp3.*
@@ -11,7 +10,7 @@ import java.io.IOException
 
 object GeoCodingRequest {
 
-    fun requestData(data: String): ArrayList<Target> {
+    fun requestData(data: String, callback: (ArrayList<Target>) -> Unit): ArrayList<Target> {
         val results = arrayListOf<Target>()
 
         val urlBuilder = HttpUrl.parse(
@@ -22,9 +21,19 @@ object GeoCodingRequest {
             ?.newBuilder()
         val url = urlBuilder?.build().toString()
         val request: Request = Request.Builder().url(url)
+            .tag("map_query")
             .build()
 
-        OkHttpClient().newCall(request).enqueue(object : Callback {
+        for (call in OkHttpClient().dispatcher().queuedCalls()) {
+            if (call.request().tag()!!.equals("map_query")) call.cancel()
+        }
+
+        for (call in OkHttpClient().dispatcher().runningCalls()) {
+            if (call.request().tag()!!.equals("map_query")) call.cancel()
+        }
+
+        val call : Call = OkHttpClient().newCall(request)
+        call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
             }
 
@@ -46,6 +55,7 @@ object GeoCodingRequest {
                         results.add(Target(name, center[0], center[1]))
                     }
 
+                    callback(results);
                 } catch (ignored: JSONException) {
                 }
             }
