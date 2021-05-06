@@ -21,6 +21,12 @@ class Marker(mapView: MapView, map: MapboxMap, style: Style, private val options
         symbolManager.iconAllowOverlap = true
     }
 
+    fun isVisible(): Boolean {
+        synchronized(this) {
+            return symbol != null
+        }
+    }
+
     fun hide() {
         synchronized(this) {
             if (symbol != null) {

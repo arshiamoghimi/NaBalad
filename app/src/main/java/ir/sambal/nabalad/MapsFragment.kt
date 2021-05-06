@@ -224,6 +224,17 @@ class MapsFragment(
                     }
                     BottomSheetBehavior.STATE_EXPANDED -> {
                         showingBottomModal = true
+                        addMarker?.let {marker ->
+                            if(!marker.isVisible()) {
+                                mapboxMap?.let { map ->
+                                    marker.setLatLng(
+                                        map.cameraPosition.target.latitude,
+                                        map.cameraPosition.target.longitude
+                                    )
+                                    marker.show()
+                                }
+                            }
+                        }
                         setBookmarkLocationTextView()
                     }
                 }
