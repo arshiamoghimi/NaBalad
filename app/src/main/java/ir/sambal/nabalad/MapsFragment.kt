@@ -14,11 +14,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.droidnet.DroidNet
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.textfield.TextInputEditText
 import com.mancj.materialsearchbar.MaterialSearchBar
 import com.mancj.materialsearchbar.adapter.SuggestionsAdapter
 import com.mapbox.android.core.location.*
@@ -34,31 +40,46 @@ import com.mapbox.mapboxsdk.maps.MapView
 import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.Style
 import com.mapbox.mapboxsdk.plugins.annotation.SymbolOptions
+import ir.sambal.nabalad.database.AppDatabase
+import ir.sambal.nabalad.database.entities.Bookmark
 import ir.sambal.nabalad.maps.Marker
 import ir.sambal.nabalad.network.GeoCodingRequest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 
 
-class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
+class MapsFragment(
+    private var db: AppDatabase,
+    private var changePageCallback: (Int) -> Unit
+) : Fragment(),
+    MaterialSearchBar.OnSearchActionListener {
+    private var toShowBookmark: Bookmark? = null
     private var mapView: MapView? = null
     private var mapboxMap: MapboxMap? = null
     private var searchBar: MaterialSearchBar? = null
     private lateinit var searchResults: ArrayList<Target>
     private var locationEngine: LocationEngine? = null
     private val locationCallback = LocationChangeListeningActivityLocationCallback(this)
-    private var marker: Marker? = null
+    private var gpsMarker: Marker? = null
+    private var addMarker: Marker? = null
+    private var bookmarkMarker: Marker? = null
     private var mapStyle = Style.LIGHT
     private var lastLocation: Location? = null
         set(value) {
             field = value
-            if (watchLocation && value != null) {
-                flyToLocation(value, GPS_ZOOM)
+            if (watchLocation && !showingBottomModal && value != null) {
+                flyToLocation(LatLng(value.latitude, value.longitude), GPS_ZOOM)
             }
         }
     private var watchLocation = true
-    private val SPEECH_REQUEST_CODE = 0
-    private val GPS_ZOOM = 17.0
-    private val SEARCH_ZOOM = 10.0
+    private var showingBottomModal = false
+    private lateinit var bookmarkBottomSheet: LinearLayout
+    private lateinit var bookmarkBottomSheetBehavior: BottomSheetBehavior<LinearLayout>
+    private lateinit var bookmarkCancelButton: Button
+    private lateinit var bookmarkSaveButton: Button
+    private lateinit var bookmarkTextView: TextView
+    private lateinit var bookmarkName: TextInputEditText
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,18 +117,46 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
                 context?.let {
                     ResourcesCompat.getDrawable(it.resources, R.drawable.marker_red, it.theme)
                         ?.let { drawable ->
-                            style.addImage(MARKER_IMAGE, drawable)
+                            style.addImage(GPS_MARKER_IMAGE, drawable)
+                        }
+                    ResourcesCompat.getDrawable(it.resources, R.drawable.marker_add, it.theme)
+                        ?.let { drawable ->
+                            style.addImage(ADD_BOOKMARK_MARKER_IMAGE, drawable)
+                        }
+                    ResourcesCompat.getDrawable(it.resources, R.drawable.marker_blue, it.theme)
+                        ?.let { drawable ->
+                            style.addImage(BOOKMARK_MARKER_IMAGE, drawable)
                         }
                 }
-                marker = Marker(
-                    mapView!!, mapboxMap, style,
-                    SymbolOptions()
-                        .withIconImage(MARKER_IMAGE)
-                        .withIconAnchor("bottom")
-                        .withIconSize(2.0F)
-                        .withTextOffset(arrayOf(0F, 0.4F))
-                        .withTextSize(18.0F)
-                )
+                mapView?.let {
+                    gpsMarker = Marker(
+                        it, mapboxMap, style,
+                        SymbolOptions()
+                            .withIconImage(GPS_MARKER_IMAGE)
+                            .withIconAnchor("bottom")
+                            .withIconSize(1.5F)
+                            .withTextOffset(arrayOf(0F, 0.4F))
+                            .withTextSize(18.0F)
+                    )
+                    addMarker = Marker(
+                        it, mapboxMap, style,
+                        SymbolOptions()
+                            .withIconImage(ADD_BOOKMARK_MARKER_IMAGE)
+                            .withIconAnchor("bottom")
+                            .withIconSize(2.0F)
+                    )
+                    bookmarkMarker = Marker(
+                        it, mapboxMap, style,
+                        SymbolOptions()
+                            .withIconImage(BOOKMARK_MARKER_IMAGE)
+                            .withIconAnchor("bottom")
+                            .withIconSize(2.0F)
+                            .withTextOffset(arrayOf(0F, 0.4F))
+                            .withTextSize(18.0F)
+                    )
+                }
+
+                showBookmark()
             }
 
 
@@ -124,11 +173,26 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
 
                 }
             })
+
+            mapboxMap.addOnMapLongClickListener { point ->
+                showingBottomModal = true
+                addMarker?.setLatLng(point.latitude, point.longitude)
+                flyToLocation(LatLng(point.latitude, point.longitude))
+                addMarker?.show()
+                setBookmarkLocationTextView()
+                bookmarkBottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+                true
+            }
         }
 
         val gpsFabButton = view.findViewById<FloatingActionButton>(R.id.current_location_fab)
         gpsFabButton.setOnClickListener {
-            lastLocation?.let { it1 -> flyToLocation(it1, GPS_ZOOM) }
+            lastLocation?.let { value ->
+                flyToLocation(
+                    LatLng(value.latitude, value.longitude),
+                    GPS_ZOOM
+                )
+            }
             watchLocation = true
         }
 
@@ -144,6 +208,56 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
         //lastSearches = loadSearchSuggestionFromDisk();
         // searchBar.setLastSuggestions(lastSearches);
         //Inflate menu and setup OnMenuItemClickListener
+
+        bookmarkBottomSheet = view.findViewById(R.id.bookmarkBottomSheet)
+        bookmarkCancelButton = view.findViewById(R.id.bookmarkCancelButton)
+        bookmarkSaveButton = view.findViewById(R.id.bookmarkSaveButton)
+        bookmarkTextView = view.findViewById(R.id.bookmarkLocation)
+        bookmarkName = view.findViewById(R.id.bookmarkName)
+        bookmarkBottomSheetBehavior = BottomSheetBehavior.from(bookmarkBottomSheet)
+
+        bookmarkBottomSheetBehavior.addBottomSheetCallback(object :
+            BottomSheetBehavior.BottomSheetCallback() {
+
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                // handle onSlide
+            }
+
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                when (newState) {
+                    BottomSheetBehavior.STATE_COLLAPSED -> {
+                        showingBottomModal = false
+                        addMarker?.hide()
+                        bookmarkName.text?.clear()
+                        activity?.let { hideKeyboard(it) }
+                    }
+                    BottomSheetBehavior.STATE_EXPANDED -> {
+                        showingBottomModal = true
+                        addMarker?.let {marker ->
+                            if(!marker.isVisible()) {
+                                mapboxMap?.let { map ->
+                                    marker.setLatLng(
+                                        map.cameraPosition.target.latitude,
+                                        map.cameraPosition.target.longitude
+                                    )
+                                    marker.show()
+                                }
+                            }
+                        }
+                        setBookmarkLocationTextView()
+                    }
+                }
+            }
+        })
+
+        bookmarkCancelButton.setOnClickListener {
+            if (bookmarkBottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED)
+                bookmarkBottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+        }
+
+        bookmarkSaveButton.setOnClickListener {
+            saveBookmark()
+        }
     }
 
     override fun onSearchStateChanged(enabled: Boolean) {
@@ -188,6 +302,33 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
         searchBar?.lastSuggestions = listOf<String>()
         searchResults = arrayListOf<Target>()
         watchLocation = false
+    }
+
+    private fun saveBookmark() {
+        addMarker?.let {
+            val lat = it.getLatitude()
+            val lon = it.getLongitude()
+            val name = bookmarkName.text.toString()
+            bookmarkName.text?.clear()
+            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                db.bookmarkDao().add(Bookmark(name = name, latitude = lat, longitude = lon))
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
+                    bookmarkBottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+                    Toast.makeText(
+                        context,
+                        getString(R.string.bookmark_is_added_msg),
+                        Toast.LENGTH_LONG
+                    ).show()
+                    changePageCallback(R.id.bookmark_menu_item)
+                }
+            }
+        }
+    }
+
+    fun setBookmarkLocationTextView() {
+        val lat: Double? = addMarker?.getLatitude()
+        val lon: Double? = addMarker?.getLongitude()
+        bookmarkTextView.text = "(%.6f, %.6f)".format(lat, lon)
     }
 
     fun hideKeyboard(activity: Activity) {
@@ -281,13 +422,13 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
             val fragment = fragmentWeakReference.get()
             if (fragment != null) {
                 if (result == null) {
-                    fragment.marker?.hide()
+                    fragment.gpsMarker?.hide()
                     fragment.lastLocation = null
                     return
                 }
                 fragment.lastLocation = result.lastLocation
                 result.lastLocation?.let { location ->
-                    fragment.marker?.let {
+                    fragment.gpsMarker?.let {
                         it.setLatLng(location.latitude, location.longitude)
                         if (System.currentTimeMillis() - location.time > 20_000) {
                             it.setText("")
@@ -376,36 +517,47 @@ class MapsFragment : Fragment(), MaterialSearchBar.OnSearchActionListener {
         mapboxMap = null
     }
 
-    private fun flyToLocation(location: Location, zoom: Double) {
+    private fun flyToLocation(latLng: LatLng, zoom: Double? = null) {
         mapboxMap?.let {
             val cameraPosition = it.cameraPosition
 
             it.animateCamera(
                 CameraUpdateFactory.newCameraPosition(
                     CameraPosition.Builder()
-                        .target(LatLng(location.latitude, location.longitude))
-                        .zoom(zoom)
+                        .target(latLng)
+                        .zoom(zoom ?: cameraPosition.zoom)
                         .build()
                 ), 500
             )
         }
     }
 
+    fun showBookmark(bookmark: Bookmark) {
+        toShowBookmark = bookmark
+    }
+
+    private fun showBookmark() {
+        toShowBookmark?.let { bookmark ->
+            watchLocation = false
+            bookmarkMarker?.let {
+                it.setLatLng(bookmark.latitude, bookmark.longitude)
+                it.setText(bookmark.name)
+                it.show()
+            }
+            flyToLocation(LatLng(bookmark.latitude, bookmark.longitude), BOOKMARK_ZOOM)
+            toShowBookmark = null
+        }
+    }
+
 
     companion object {
 
-        const val MARKER_IMAGE = "marker-image"
-
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @return A new instance of fragment MapsFragment.
-         */
-        @JvmStatic
-        fun newInstance() =
-            MapsFragment().apply {
-
-            }
+        const val GPS_MARKER_IMAGE = "gps-marker-image"
+        const val ADD_BOOKMARK_MARKER_IMAGE = "add-marker-image"
+        const val BOOKMARK_MARKER_IMAGE = "blue-marker-image"
+        const private val SPEECH_REQUEST_CODE = 0
+        const private val GPS_ZOOM = 17.0
+        const private val BOOKMARK_ZOOM = 15.0
+        const private val SEARCH_ZOOM = 10.0
     }
 }

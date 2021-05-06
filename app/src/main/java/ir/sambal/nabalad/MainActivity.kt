@@ -11,12 +11,13 @@ import com.droidnet.DroidNet
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.mapbox.android.core.permissions.PermissionsManager
 import ir.sambal.nabalad.database.AppDatabase
+import ir.sambal.nabalad.database.entities.Bookmark
 
 class MainActivity : AppCompatActivity(), DroidListener {
 
     private var mDroidNet: DroidNet? = null
 
-    private var db: AppDatabase? = null
+    private lateinit var db: AppDatabase
 
     private var mapsFragment: MapsFragment? = null
     private var bookmarkFragment: BookmarkFragment? = null
@@ -42,12 +43,19 @@ class MainActivity : AppCompatActivity(), DroidListener {
 
         askRequiredPermissions()
 
-        mapsFragment = MapsFragment.newInstance()
+        mapsFragment = MapsFragment(db) { itemId ->
+            val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+            bottomNavigation.selectedItemId = itemId
+        }
         setCurrentFragment(mapsFragment!!)
 
-        bookmarkFragment = BookmarkFragment.newInstance(db!!)
+        bookmarkFragment = BookmarkFragment(db) { bookmark: Bookmark ->
+            mapsFragment?.showBookmark(bookmark)
+            val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+            bottomNavigation.selectedItemId = R.id.maps_menu_item
+        }
 
-        settingFragment = SettingFragment.newInstance()
+        settingFragment = SettingFragment()
 
         setContentView(R.layout.activity_main)
 
@@ -55,32 +63,36 @@ class MainActivity : AppCompatActivity(), DroidListener {
 
         val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
         bottomNavigation.setOnNavigationItemSelectedListener {
-            val title: String?
-            when (it.itemId) {
-                R.id.maps_menu_item -> {
-                    setCurrentFragment(mapsFragment!!)
-                    title = null
-                }
-                R.id.bookmark_menu_item -> {
-                    setCurrentFragment(bookmarkFragment!!)
-                    title = getString(R.string.bookmark)
-                }
-                R.id.settings_menu_item -> {
-                    setCurrentFragment(settingFragment!!)
-                    title = getString(R.string.setting)
-                }
-                else -> {
-                    setCurrentFragment(mapsFragment!!)
-                    title = null
-                }
-            }
-            if (title != null) {
-                supportActionBar?.show()
-                supportActionBar?.title = title
-            } else {
-                supportActionBar?.hide()
-            }
+            changePage(it.itemId)
             true
+        }
+    }
+
+    private fun changePage(itemId: Int) {
+        val title: String?
+        when (itemId) {
+            R.id.maps_menu_item -> {
+                setCurrentFragment(mapsFragment!!)
+                title = null
+            }
+            R.id.bookmark_menu_item -> {
+                setCurrentFragment(bookmarkFragment!!)
+                title = getString(R.string.bookmark)
+            }
+            R.id.settings_menu_item -> {
+                setCurrentFragment(settingFragment!!)
+                title = getString(R.string.setting)
+            }
+            else -> {
+                setCurrentFragment(mapsFragment!!)
+                title = null
+            }
+        }
+        if (title != null) {
+            supportActionBar?.show()
+            supportActionBar?.title = title
+        } else {
+            supportActionBar?.hide()
         }
     }
 
