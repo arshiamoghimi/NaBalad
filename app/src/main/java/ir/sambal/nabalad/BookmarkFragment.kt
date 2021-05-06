@@ -8,10 +8,10 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.mancj.materialsearchbar.MaterialSearchBar
 import ir.sambal.nabalad.database.AppDatabase
 import ir.sambal.nabalad.database.entities.Bookmark
@@ -33,29 +33,24 @@ class BookmarkFragment(private val db: AppDatabase) : Fragment(),
         val view = inflater.inflate(R.layout.fragment_bookmarks, container, false)
 
         // Set the adapter
-        val listView = view.findViewById<View>(R.id.list)
-        if (listView is RecyclerView) {
-            viewModel = BookmarkViewModel(db, listView)
+        val notFoundView = view.findViewById<TextView>(R.id.bookmark_not_found_error_text)
+        val listView = view.findViewById<RecyclerView>(R.id.list)
+        viewModel = BookmarkViewModel(db, listView, notFoundView)
 
-            val layoutManager = LinearLayoutManager(context)
-            listView.layoutManager = layoutManager
-            listView.adapter = MyBookmarkRecyclerViewAdapter(this::onBookmarkDelete)
+        val layoutManager = LinearLayoutManager(context)
+        listView.layoutManager = layoutManager
+        listView.adapter = MyBookmarkRecyclerViewAdapter(this::onBookmarkDelete)
 
-            val scrollListener = object : EndlessRecyclerViewScrollListener(layoutManager) {
-                override fun onLoadMore(page: Int, totalItemsCount: Int, view: RecyclerView?) {
-                    Log.i(TAG, "onLoadMore page: ${page}, totalItemsCount: $totalItemsCount")
-                    viewModel?.loadMoreBookmarks(filter = filter) {
-                        finishLoadMore()
-                    }
+        val scrollListener = object : EndlessRecyclerViewScrollListener(layoutManager) {
+            override fun onLoadMore(page: Int, totalItemsCount: Int, view: RecyclerView?) {
+                Log.i(TAG, "onLoadMore page: ${page}, totalItemsCount: $totalItemsCount")
+                viewModel?.loadMoreBookmarks(filter = filter) {
+                    finishLoadMore()
                 }
             }
-            listView.addOnScrollListener(scrollListener)
         }
+        listView.addOnScrollListener(scrollListener)
         viewModel?.loadTopBookmarks()
-
-        view.findViewById<FloatingActionButton>(R.id.add_random_bookmark).setOnClickListener {
-            viewModel?.addRandom()
-        }
 
         searchBar = view.findViewById<MaterialSearchBar>(R.id.search_bar)
         searchBar.setOnSearchActionListener(this)

@@ -1,14 +1,11 @@
 package ir.sambal.nabalad
 
-import android.location.Location
+import com.mapbox.mapboxsdk.geometry.LatLng
 
 class Target(val name: String, val longitude: Double, val latitude: Double) {
 
-    fun getLocation(): Location {
-        val location = Location("")
-        location.latitude = latitude
-        location.longitude = longitude
-        return location
+    fun getLatLng(): LatLng {
+        return LatLng(latitude, longitude)
     }
 
 }
