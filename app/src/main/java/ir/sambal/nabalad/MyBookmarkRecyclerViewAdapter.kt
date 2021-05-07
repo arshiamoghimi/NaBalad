@@ -29,14 +29,14 @@ class MyBookmarkRecyclerViewAdapter(
         val item = values[position]
         holder.titleView.text = item.name
         holder.locationView.text = item.latLng()
-        holder.cardView.setOnClickListener { v ->
+        holder.cardView.setOnClickListener {
             Log.i(
                 "BOOKMARK_LIST",
                 "click " + item.id.toString()
             )
             onClickHandler(item)
         }
-        holder.removeButtonView.setOnClickListener { v ->
+        holder.removeButtonView.setOnClickListener {
             Log.i(
                 "BOOKMARK_LIST",
                 "remove " + item.id.toString()

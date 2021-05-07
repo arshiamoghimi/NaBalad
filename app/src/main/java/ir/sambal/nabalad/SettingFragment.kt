@@ -25,7 +25,7 @@ class SettingFragment : Fragment() {
                 switch.isChecked = true
             }
         }
-        switch.setOnCheckedChangeListener { buttonView, isChecked ->
+        switch.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 ThemeHelper.applyTheme(ThemeHelper.DARK_MODE)
             } else {

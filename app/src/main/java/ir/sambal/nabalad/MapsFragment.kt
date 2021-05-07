@@ -293,7 +293,7 @@ class MapsFragment(
     }
 
     fun gotoSearchedLocation(position: Int) {
-        flyToLocation(searchResults[position].getLocation(), SEARCH_ZOOM)
+        flyToLocation(searchResults[position].getLatLng(), SEARCH_ZOOM)
         activity?.let { hideKeyboard(it) }
         searchBar?.closeSearch()
         if (searchBar?.isSuggestionsVisible!!) {
