@@ -96,6 +96,15 @@ class MainActivity : AppCompatActivity(), DroidListener {
         }
     }
 
+    override fun onBackPressed() {
+        if (mapsFragment?.isVisible == true) {
+            super.onBackPressed()
+        }
+        mapsFragment?.let { setCurrentFragment(it) }
+        val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+        bottomNavigation.selectedItemId = R.id.maps_menu_item
+    }
+
     private fun setCurrentFragment(fragment: Fragment) =
         supportFragmentManager.beginTransaction().apply {
             replace(R.id.mainFragment, fragment)
