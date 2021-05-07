@@ -3,7 +3,6 @@
     <string name="bookmark">Bookmark</string>
     <string name="map">Map</string>
     <string name="settings">Settings</string>
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="delete">Delete</string>
     <string name="bookmark_image">Bookmark Image</string>
@@ -20,5 +19,7 @@
     <string name="save">save</string>
     <string name="filter_bookmarks">Filter bookmarks</string>
     <string name="bookmarks_not_found">There is no bookmarks :(</string>
-    <string name="bookmark_is_added_msg">Bookmark inserted successfully</string>
+    <string name="bookmark_is_added_msg">Bookmark added successfully</string>
+    <string name="no_network">No Network Available</string>
+    <string name="success">Success</string>
 </resources>
