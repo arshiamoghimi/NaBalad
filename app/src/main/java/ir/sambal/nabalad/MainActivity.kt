@@ -2,6 +2,7 @@ package ir.sambal.nabalad
 
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
@@ -55,7 +56,7 @@ class MainActivity : AppCompatActivity(), DroidListener {
             bottomNavigation.selectedItemId = R.id.maps_menu_item
         }
 
-        settingFragment = SettingFragment()
+        settingFragment = SettingFragment(db)
 
         setContentView(R.layout.activity_main)
 
@@ -144,7 +145,7 @@ class MainActivity : AppCompatActivity(), DroidListener {
 
     override fun onInternetConnectivityChanged(isConnected: Boolean) {
         if (!isConnected) {
-//            TODO("Ask user for internet")
+            Toast.makeText(applicationContext, R.string.no_network, Toast.LENGTH_LONG).show()
         }
     }
 }

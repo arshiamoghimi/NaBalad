@@ -15,6 +15,9 @@ interface BookmarkDao {
     @Delete
     suspend fun delete(bookmark: Bookmark)
 
+    @Query("DELETE FROM bookmark")
+    fun nukeTable()
+
     @Query("Select * from bookmark order by id desc limit :limit offset :offset")
     suspend fun loadBookmarks(offset: Int = 0, limit: Int = 10): List<Bookmark>
 
